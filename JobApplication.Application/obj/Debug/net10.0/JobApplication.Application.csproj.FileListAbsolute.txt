@@ -1,0 +1,16 @@
+A:\Project\JobApplication.Application\bin\Debug\net10.0\JobApplication.Application.deps.json
+A:\Project\JobApplication.Application\bin\Debug\net10.0\JobApplication.Application.dll
+A:\Project\JobApplication.Application\bin\Debug\net10.0\JobApplication.Application.pdb
+A:\Project\JobApplication.Application\bin\Debug\net10.0\JobApplication.Domain.dll
+A:\Project\JobApplication.Application\bin\Debug\net10.0\JobApplication.Domain.pdb
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.csproj.AssemblyReference.cache
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.GeneratedMSBuildEditorConfig.editorconfig
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.AssemblyInfoInputs.cache
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.AssemblyInfo.cs
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.csproj.CoreCompileInputs.cache
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobAppli.B01164E4.Up2Date
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.dll
+A:\Project\JobApplication.Application\obj\Debug\net10.0\refint\JobApplication.Application.dll
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.pdb
+A:\Project\JobApplication.Application\obj\Debug\net10.0\ref\JobApplication.Application.dll
+A:\Project\JobApplication.Application\obj\Debug\net10.0\JobApplication.Application.sourcelink.json

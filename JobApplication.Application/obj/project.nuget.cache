@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "1llvXlwOYtk=",
+  "success": true,
+  "projectFilePath": "A:\\Project\\JobApplication.Application\\JobApplication.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\EN ALI\\.nuget\\packages\\mediatr\\12.4.1\\mediatr.12.4.1.nupkg.sha512",
+    "C:\\Users\\EN ALI\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",
+    "C:\\Users\\EN ALI\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

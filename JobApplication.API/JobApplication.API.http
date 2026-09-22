@@ -1,0 +1,486 @@
+@JobApplication.API_HostAddress = http://localhost:5018
+
+### ===========================================================================
+###  JobApplication API — Day 3 test suite
+### ===========================================================================
+###  How to use:
+###   1) Start the API (the https profile serves Scalar at /scalar)
+###   2) Click "Send Request" on each request, top to bottom
+###   3) Tokens are captured automatically from the responses (via @name)
+### ===========================================================================
+
+
+### ===========================================================================
+###  1) AUTH — Register
+### ===========================================================================
+
+# @name registerRecruiter
+POST {{JobApplication.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ahmed Recruiter",
+  "email": "recruiter@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Recruiter"
+}
+
+### Expected: 201 Created + token
+
+# @name registerCandidate
+POST {{JobApplication.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Mona Candidate",
+  "email": "candidate@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Candidate",
+  "cvUrl": "https://example.com/mona-cv.pdf"
+}
+
+### Expected: 201 Created + token
+
+# @name registerCandidate2
+POST {{JobApplication.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Sara Candidate",
+  "email": "candidate2@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Candidate"
+}
+
+### Expected: 201 Created — a second candidate, used for ownership tests
+
+### --- Error case: duplicate email ---
+POST {{JobApplication.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate",
+  "email": "candidate@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Candidate"
+}
+
+### Expected: 409 Conflict
+
+### --- Error case: invalid role ---
+POST {{JobApplication.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Bad Role",
+  "email": "bad@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Admin"
+}
+
+### Expected: 400 Bad Request
+
+### --- Error case: password too short (validation) ---
+POST {{JobApplication.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Short Pass",
+  "email": "short@test.com",
+  "password": "123",
+  "role": "Candidate"
+}
+
+### Expected: 400 Bad Request (model validation)
+
+
+### ===========================================================================
+###  2) AUTH — Login
+### ===========================================================================
+
+# @name loginRecruiter
+POST {{JobApplication.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "recruiter@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Recruiter"
+}
+
+### Expected: 200 OK + token
+
+# @name loginCandidate
+POST {{JobApplication.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "candidate@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Candidate"
+}
+
+# @name loginCandidate2
+POST {{JobApplication.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "candidate2@test.com",
+  "password": "P@ssw0rd123",
+  "role": "Candidate"
+}
+
+### Expected: 200 OK
+
+### --- Error case: wrong password ---
+POST {{JobApplication.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "candidate@test.com",
+  "password": "WrongPassword123"
+}
+
+### Expected: 401 Unauthorized — with exactly the same message as the
+### "email not found" case below (prevents user enumeration)
+
+### --- Error case: email does not exist ---
+POST {{JobApplication.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nobody@test.com",
+  "password": "P@ssw0rd123"
+}
+
+### Expected: 401 Unauthorized — exactly the same message
+
+
+### ===========================================================================
+###  3) JOBS — Create a job (Recruiter only)
+### ===========================================================================
+
+# @name createJob
+POST {{JobApplication.API_HostAddress}}/api/jobs
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "title": "Senior .NET Backend Developer",
+  "description": "Seeking a backend developer with 5 years of experience in ASP.NET Core, EF Core, and Clean Architecture."
+}
+
+### Expected: 201 Created + { id, title, isActive: true, recruiterId, ... }
+### Note the id — it is needed below. If the id is not 1, update the
+### hard-coded values underneath.
+@jobId = 1
+
+### --- Error case: no token ---
+POST {{JobApplication.API_HostAddress}}/api/jobs
+Content-Type: application/json
+
+{
+  "title": "Should Fail",
+  "description": "There is no token at all, so this must be rejected."
+}
+
+### Expected: 401 Unauthorized
+
+### --- Error case: candidate token (wrong role) ---
+POST {{JobApplication.API_HostAddress}}/api/jobs
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "title": "Should Fail",
+  "description": "A candidate is not allowed to create a job."
+}
+
+### Expected: 403 Forbidden
+
+### --- Error case: empty title (validation) ---
+POST {{JobApplication.API_HostAddress}}/api/jobs
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "title": "",
+  "description": "This description is long enough to pass validation."
+}
+
+### Expected: 400 Bad Request
+
+
+### ===========================================================================
+###  4) APPLICATIONS — Apply for a job (Candidate only)
+### ===========================================================================
+
+# @name applyMona
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "jobId": {{jobId}}
+}
+
+### Expected: 201 Created
+### { id, jobId, candidateId, status: "Applied", appliedAt, statusUpdatedAt, cancelledAt: null }
+### Note: there is no candidateId in the request — the system took it from the token.
+
+# @name applySara
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate2.response.body.$.token}}
+
+{
+  "jobId": {{jobId}}
+}
+
+### Expected: 201 Created — a different candidateId
+
+### --- Error case: duplicate application by the same candidate ---
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "jobId": {{jobId}}
+}
+
+### Expected: 409 Conflict
+
+### --- Error case: job does not exist ---
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "jobId": 999999
+}
+
+### Expected: 404 Not Found
+
+### --- Error case: recruiter token (wrong role) ---
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "jobId": {{jobId}}
+}
+
+### Expected: 403 Forbidden
+
+### --- Error case: JobId = 0 (validation) ---
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "jobId": 0
+}
+
+### Expected: 400 Bad Request
+
+
+### ===========================================================================
+###  5) APPLICATIONS — Update status (must own the job)
+### ===========================================================================
+
+@applicationId = 1
+
+### --- Applied -> UnderReview (valid transition) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "UnderReview"
+}
+
+### Expected: 204 No Content
+
+### --- UnderReview -> Applied (backwards — forbidden) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "Applied"
+}
+
+### Expected: 400 Bad Request (forward-only)
+
+### --- UnderReview -> Accepted (skipping a stage — forbidden) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "Accepted"
+}
+
+### Expected: 400 Bad Request
+
+### --- UnderReview -> InterView (valid) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "InterView"
+}
+
+### Expected: 204 No Content
+
+### --- InterView -> Accepted (valid) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "Accepted"
+}
+
+### Expected: 204 No Content
+
+### --- Accepted -> anything (terminal state — forbidden) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "Rejected"
+}
+
+### Expected: 400 Bad Request
+
+### --- Error case: application does not exist ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/999999/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "UnderReview"
+}
+
+### Expected: 404 Not Found
+
+### --- Error case: wrong role (Candidate) ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "status": "UnderReview"
+}
+
+### Expected: 403 Forbidden
+
+### --- Error case: unknown status value ---
+PUT {{JobApplication.API_HostAddress}}/api/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+{
+  "status": "NotARealStatus"
+}
+
+### Expected: 400 Bad Request (JSON deserialization)
+
+
+### ===========================================================================
+###  6) APPLICATIONS — Cancel (soft delete, applicant only)
+### ===========================================================================
+###  Note: use applicationId = 2 (Sara's) because the first one is already
+###  Accepted. Adjust the number to match what you actually got.
+
+@cancelTargetId = 2
+
+### --- The applicant cancels while in the Applied state (allowed) ---
+DELETE {{JobApplication.API_HostAddress}}/api/applications/{{cancelTargetId}}
+Authorization: Bearer {{loginCandidate2.response.body.$.token}}
+
+### Expected: 204 No Content
+
+### --- Cancelling the same application again (already cancelled) ---
+DELETE {{JobApplication.API_HostAddress}}/api/applications/{{cancelTargetId}}
+Authorization: Bearer {{loginCandidate2.response.body.$.token}}
+
+### Expected: 400 Bad Request — Cancelled is not a cancellable state
+
+### --- Someone else tries to cancel an application they do not own (IDOR) ---
+DELETE {{JobApplication.API_HostAddress}}/api/applications/{{cancelTargetId}}
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+### Expected: 403 Forbidden
+
+### --- Application does not exist ---
+DELETE {{JobApplication.API_HostAddress}}/api/applications/999999
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+### Expected: 404 Not Found
+
+### --- Recruiter token (wrong role) ---
+DELETE {{JobApplication.API_HostAddress}}/api/applications/{{cancelTargetId}}
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+### Expected: 403 Forbidden
+
+
+### ===========================================================================
+###  7) JOBS — Close a job (owner only)
+### ===========================================================================
+
+### --- The owner closes the job ---
+PUT {{JobApplication.API_HostAddress}}/api/jobs/{{jobId}}/close
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+### Expected: 204 No Content
+
+### --- Closing the same job again (already closed) ---
+PUT {{JobApplication.API_HostAddress}}/api/jobs/{{jobId}}/close
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+### Expected: 400 Bad Request
+
+### --- Job does not exist ---
+PUT {{JobApplication.API_HostAddress}}/api/jobs/999999/close
+Authorization: Bearer {{loginRecruiter.response.body.$.token}}
+
+### Expected: 404 Not Found
+
+### --- No token ---
+PUT {{JobApplication.API_HostAddress}}/api/jobs/{{jobId}}/close
+
+### Expected: 401 Unauthorized
+
+### --- Applying for a closed job (after closing it above) ---
+POST {{JobApplication.API_HostAddress}}/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginCandidate.response.body.$.token}}
+
+{
+  "jobId": {{jobId}}
+}
+
+### Expected: either 400 Bad Request (the job is closed) or 409 Conflict if
+### the candidate had not applied yet. The service checks IsActive before the
+### duplicate rule, and this candidate has already applied, so 400 is expected.
+
+
+### ===========================================================================
+###  Important notes
+### ===========================================================================
+###
+### WARNING: to test the "recruiter does not own the job" scenario you need a
+###    second recruiter. Register one with a different email, then try closing
+###    the job or updating an application status with that token — expect 403.
+###
+### WARNING: the id values (jobId / applicationId) are hard-coded here because
+###    an .http file has limited support for dynamic variables. Read the real
+###    values from the responses and adjust them.
+###
+### WARNING: this .http file is a manual test harness — it is not part of the
+###    application itself.

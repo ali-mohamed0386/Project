@@ -1,0 +1,12 @@
+A:\Project\JobApplication.Domain\bin\Debug\net10.0\JobApplication.Domain.deps.json
+A:\Project\JobApplication.Domain\bin\Debug\net10.0\JobApplication.Domain.dll
+A:\Project\JobApplication.Domain\bin\Debug\net10.0\JobApplication.Domain.pdb
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.GeneratedMSBuildEditorConfig.editorconfig
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.AssemblyInfoInputs.cache
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.AssemblyInfo.cs
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.csproj.CoreCompileInputs.cache
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.dll
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\refint\JobApplication.Domain.dll
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.pdb
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\ref\JobApplication.Domain.dll
+A:\Project\JobApplication.Domain\obj\Debug\net10.0\JobApplication.Domain.sourcelink.json

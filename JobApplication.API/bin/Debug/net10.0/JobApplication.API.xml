@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>JobApplication.API</name>
+    </assembly>
+    <members>
+        <member name="T:JobApplication.API.Controllers.ApplicationsController">
+            <summary>
+            Job applications.
+            Note the name ApplicationsController (not JobCandidateApplicationsController):
+            the [controller] token generates the required route, /api/applications.
+            </summary>
+        </member>
+        <member name="M:JobApplication.API.Controllers.ApplicationsController.Apply(JobApplication.Application.DTOs.CreateApplicationDto)">
+            <summary>Applies for a job. Candidates only.</summary>
+            <remarks>
+            The applying candidate is taken from the bearer token, so there is no
+            CandidateId field in the request body — this makes it impossible to
+            apply on behalf of someone else.
+            </remarks>
+            <param name="createApplicationDto">The id of the job to apply for.</param>
+            <response code="201">The application was created.</response>
+            <response code="400">The job is closed and no longer accepts applications.</response>
+            <response code="401">The token is missing or invalid.</response>
+            <response code="403">The caller is not a Candidate.</response>
+            <response code="404">The job or the candidate does not exist.</response>
+            <response code="409">The candidate has already applied for this job.</response>
+        </member>
+        <member name="M:JobApplication.API.Controllers.ApplicationsController.UpdateStatus(System.Int32,JobApplication.Application.DTOs.UpdateApplicationStatusDto)">
+            <summary>Changes an application status. The caller must own the job.</summary>
+            <remarks>
+            Only forward transitions are allowed, following the state machine
+            Applied → UnderReview → InterView → Accepted/Rejected.
+            </remarks>
+            <param name="id">The id of the application to update.</param>
+            <param name="dto">The new status.</param>
+            <response code="204">The status was updated.</response>
+            <response code="400">The requested transition is not allowed.</response>
+            <response code="401">The token is missing or invalid.</response>
+            <response code="403">The caller is not a Recruiter, or does not own the job.</response>
+            <response code="404">No application with the supplied id exists.</response>
+        </member>
+        <member name="M:JobApplication.API.Controllers.ApplicationsController.Cancel(System.Int32)">
+            <summary>
+            Cancels the application. Only the applicant may cancel it.
+            This is not a physical delete — the status is set to Cancelled and
+            CancelledAt is recorded.
+            </summary>
+            <param name="id">The id of the application to cancel.</param>
+            <response code="204">The application was cancelled.</response>
+            <response code="400">
+            The application is past the UnderReview state and can no longer be cancelled.
+            </response>
+            <response code="401">The token is missing or invalid.</response>
+            <response code="403">The caller is not a Candidate, or is not the applicant.</response>
+            <response code="404">No application with the supplied id exists.</response>
+        </member>
+        <member name="M:JobApplication.API.Controllers.AuthController.Register(JobApplication.Application.DTOs.RegisterDto)">
+            <summary>
+            Registers a new account (Candidate or Recruiter, depending on the
+            role) and returns a token immediately, so the caller does not have
+            to log in afterwards.
+            </summary>
+            <param name="registerDto">The account details, including the role.</param>
+            <response code="201">The account was created and a token issued.</response>
+            <response code="400">The payload is invalid, or the role is not recognised.</response>
+            <response code="409">The email address is already registered for that role.</response>
+        </member>
+        <member name="M:JobApplication.API.Controllers.AuthController.Login(JobApplication.Application.DTOs.LoginDto)">
+            <summary>Signs in and issues a token.</summary>
+            <remarks>
+            When the optional role is supplied, only that table is searched.
+            When it is omitted, both Candidates and Recruiters are searched.
+            </remarks>
+            <param name="loginDto">The credentials, and an optional role.</param>
+            <response code="200">The credentials were accepted and a token issued.</response>
+            <response code="400">The payload failed validation.</response>
+            <response code="401">The email or password is incorrect.</response>
+        </member>
+        <member name="M:JobApplication.API.Controllers.JobsController.Create(JobApplication.Application.DTOs.CreateJobDto)">
+            <summary>Creates a new job. Recruiters only.</summary>
+            <remarks>
+            The owning recruiter is taken from the bearer token, so there is no
+            RecruiterId field in the request body.
+            </remarks>
+            <param name="createJobDto">The title and description of the new job.</param>
+            <response code="201">The job was created. The created job is returned.</response>
+            <response code="400">The payload failed validation.</response>
+            <response code="401">The token is missing or invalid.</response>
+            <response code="403">The caller is not a Recruiter.</response>
+        </member>
+        <member name="M:JobApplication.API.Controllers.JobsController.Close(System.Int32)">
+             <summary>Closes the job. Only its owner may close it.</summary>
+             <remarks>
+             Sets the job to inactive and records ClosedAt and ClosedBy.
+             The caller is identified by the bearer token and must be the
+             recruiter who owns the job.
+            
+             A job may only be closed once — closing it again returns 400.
+             </remarks>
+             <param name="id">The id of the job to close.</param>
+             <response code="204">The job was closed.</response>
+             <response code="400">The job is already closed.</response>
+             <response code="401">The token is missing or invalid.</response>
+             <response code="403">The caller is not a Recruiter, or does not own the job.</response>
+             <response code="404">No job with the supplied id exists.</response>
+        </member>
+        <member name="T:JobApplication.API.Middleware.ExceptionHandlingMiddleware">
+            <summary>
+            Translates exceptions into appropriate HTTP status codes so that
+            business rules stay in the Application layer and are not repeated in
+            every controller.
+            </summary>
+        </member>
+        <member name="T:JobApplication.API.Services.CurrentUserService">
+            <summary>
+            Implements ICurrentUserService by reading the claims of the current
+            request's HttpContext.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">
+            <summary>
+            Generates a documentation comment ID for a type.
+            Example: T:Namespace.Outer+Inner`1 becomes T:Namespace.Outer.Inner`1
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.PropertyInfo)">
+            <summary>
+            Generates a documentation comment ID for a property.
+            Example: P:Namespace.ContainingType.PropertyName or for an indexer P:Namespace.ContainingType.Item(System.Int32)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type,System.String)">
+            <summary>
+            Generates a documentation comment ID for a property given its container type and property name.
+            Example: P:Namespace.ContainingType.PropertyName
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.MethodInfo)">
+            <summary>
+            Generates a documentation comment ID for a method (or constructor).
+            For example:
+              M:Namespace.ContainingType.MethodName(ParamType1,ParamType2)~ReturnType
+              M:Namespace.ContainingType.#ctor(ParamType)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.GetTypeDocId(System.Type,System.Boolean,System.Boolean)">
+            <summary>
+            Generates a documentation ID string for a type.
+            This method handles nested types (replacing '+' with '.'),
+            generic types, arrays, pointers, by-ref types, and generic parameters.
+            The <paramref name="includeGenericArguments"/> flag controls whether
+            constructed generic type arguments are emitted, while <paramref name="omitGenericArity"/>
+            controls whether the generic arity marker (e.g. "`1") is appended.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.NormalizeDocId(System.String)">
+            <summary>
+            Normalizes a documentation comment ID to match the compiler-style format.
+            Strips the return type suffix for ordinary methods but retains it for conversion operators.
+            </summary>
+            <param name="docId">The documentation comment ID to normalize.</param>
+            <returns>The normalized documentation comment ID.</returns>
+        </member>
+    </members>
+</doc>
